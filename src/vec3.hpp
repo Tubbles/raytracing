@@ -58,9 +58,9 @@ struct vec3 {
 
     vec3 operator/(double t) const { return *this * (1 / t); }
 
-    constexpr double length() const { return std::sqrt(length_squared()); }
-
     constexpr double length_squared() const { return e[0] * e[0] + e[1] * e[1] + e[2] * e[2]; }
+
+    constexpr double length() const { return std::sqrt(length_squared()); }
 
     vec3 unit() const { return *this / this->length(); }
 

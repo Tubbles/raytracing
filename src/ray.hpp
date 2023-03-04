@@ -3,14 +3,14 @@
 #include "util.hpp"
 #include "vec3.hpp"
 
-struct ray {
-    ray() = default;
+struct ray_t {
+    ray_t() = default;
     // The "origin - direction" memory rule is pretty widely adopted and the order makes a lot of sense
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-    ray(const point &origin, const vec3 &direction) : orig(origin), dir(direction) {}
+    ray_t(const point_t &_origin, const vec3_t &_direction) : origin(_origin), direction(_direction) {}
 
-    [[nodiscard]] auto at(double t) const -> point { return orig + t * dir; }
+    [[nodiscard]] auto project(double t) const -> point_t { return origin + t * direction; }
 
-    point orig;
-    vec3 dir;
+    point_t origin;
+    vec3_t direction;
 };

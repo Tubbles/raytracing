@@ -1,12 +1,13 @@
 #pragma once
 
+#include <cassert>
 #include <cmath>
 #include <fmt/format.h>
 #include <string>
 
 struct vec3 {
     union {
-        double e[3];
+        double e[3]; // Array used for unionizing, NOLINT (modernize-avoid-c-arrays)
         struct {
             double x;
             double y;
@@ -19,79 +20,87 @@ struct vec3 {
         };
     };
 
-    constexpr vec3() : e{0.0, 0.0, 0.0} {}
-    constexpr static vec3 from(double e0, double e1, double e2) {
+    constexpr vec3() : e{0.0, 0.0, 0.0} {} // All union members init'ed, NOLINT(hicpp-member-init)
+    constexpr static auto from(double e0, double e1, double e2) -> vec3 {
         vec3 out;
         out.e[0] = e0;
         out.e[1] = e1;
         out.e[2] = e2;
         return out;
-    };
-    vec3 copy() const {
+    }
+    [[nodiscard]] auto copy() const -> vec3 {
         vec3 out;
         std::memcpy(&out, this, sizeof(out));
         return out;
     }
 
-    constexpr vec3 operator-() const { return vec3::from(-e[0], -e[1], -e[2]); }
-    constexpr double operator[](size_t i) const { return e[i]; }
-    constexpr double &operator[](size_t i) { return e[i]; }
+    [[nodiscard]] constexpr auto operator-() const -> vec3 { return vec3::from(-e[0], -e[1], -e[2]); }
+    [[nodiscard]] constexpr auto operator[](size_t i) const -> double {
+        assert(i < ARR_LEN(e));
+        return e[i]; // Array subscript checked, NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
+    }
+    [[nodiscard]] constexpr auto operator[](size_t i) -> double & {
+        assert(i < ARR_LEN(e));
+        return e[i]; // Array subscript checked, NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
+    }
 
-    constexpr vec3 &operator+=(const vec3 &v) {
+    constexpr auto operator+=(const vec3 &v) -> vec3 & {
         e[0] += v.e[0];
         e[1] += v.e[1];
         e[2] += v.e[2];
         return *this;
     }
 
-    constexpr vec3 &operator*=(const double t) {
+    constexpr auto operator*=(const double t) -> vec3 & {
         e[0] *= t;
         e[1] *= t;
         e[2] *= t;
         return *this;
     }
 
-    constexpr vec3 &operator/=(const double t) { return *this *= 1 / t; }
+    constexpr auto operator/=(const double t) -> vec3 & { return *this *= 1 / t; }
 
-    constexpr vec3 operator+(const vec3 &other) const {
+    [[nodiscard]] constexpr auto operator+(const vec3 &other) const -> vec3 {
         return vec3::from(this->e[0] + other.e[0], this->e[1] + other.e[1], this->e[2] + other.e[2]);
     }
 
-    constexpr vec3 operator-(const vec3 &other) const {
+    [[nodiscard]] constexpr auto operator-(const vec3 &other) const -> vec3 {
         return vec3::from(this->e[0] - other.e[0], this->e[1] - other.e[1], this->e[2] - other.e[2]);
     }
 
-    constexpr double operator*(const vec3 &other) const {
+    [[nodiscard]] constexpr auto operator*(const vec3 &other) const -> double {
         return this->e[0] * other.e[0] + this->e[1] * other.e[1] + this->e[2] * other.e[2];
     }
 
-    constexpr vec3 elem_mult(const vec3 &other) const {
+    [[nodiscard]] constexpr auto elem_mult(const vec3 &other) const -> vec3 {
         return vec3::from(this->e[0] * other.e[0], this->e[1] * other.e[1], this->e[2] * other.e[2]);
     }
 
-    constexpr vec3 operator*(double t) const { return vec3::from(t * this->e[0], t * this->e[1], t * this->e[2]); }
+    [[nodiscard]] constexpr auto operator*(double t) const -> vec3 {
+        return vec3::from(t * this->e[0], t * this->e[1], t * this->e[2]);
+    }
 
-    constexpr vec3 operator/(double t) const { return *this * (1 / t); }
+    [[nodiscard]] constexpr auto operator/(double t) const -> vec3 { return *this * (1 / t); }
 
-    constexpr double length_squared() const { return e[0] * e[0] + e[1] * e[1] + e[2] * e[2]; }
+    [[nodiscard]] constexpr auto length_squared() const -> double { return e[0] * e[0] + e[1] * e[1] + e[2] * e[2]; }
 
-    constexpr double length() const { return std::sqrt(length_squared()); }
+    [[nodiscard]] constexpr auto length() const -> double { return std::sqrt(length_squared()); }
 
-    constexpr vec3 unit() const { return *this / this->length(); }
+    [[nodiscard]] constexpr auto unit() const -> vec3 { return *this / this->length(); }
 
-    constexpr double dot(const vec3 &other) const { return this->operator*(other); }
+    [[nodiscard]] constexpr auto dot(const vec3 &other) const -> double { return this->operator*(other); }
 
-    constexpr vec3 cross(const vec3 &other) const {
+    [[nodiscard]] constexpr auto cross(const vec3 &other) const -> vec3 {
         return vec3::from(this->e[1] * other.e[2] - this->e[2] * other.e[1],
                           this->e[2] * other.e[0] - this->e[0] * other.e[2],
                           this->e[0] * other.e[1] - this->e[1] * other.e[0]);
     }
 
-    operator std::string() const { return fmt::format("({}, {}, {})", e[0], e[1], e[2]); }
+    [[nodiscard]] explicit operator std::string() const { return fmt::format("({}, {}, {})", e[0], e[1], e[2]); }
 
-    std::string to_string() const { return std::string{*this}; }
+    [[nodiscard]] auto to_string() const -> std::string { return std::string{*this}; }
 
-    std::string ppm_string() const {
+    [[nodiscard]] auto ppm_string() const -> std::string {
         // clang-format off
         return fmt::format(
             "{} {} {}",
@@ -103,12 +112,18 @@ struct vec3 {
     }
 };
 
-inline constexpr vec3 operator*(double t, const vec3 &v) { return v * t; }
+[[nodiscard]] inline constexpr auto operator*(double t, const vec3 &v) -> vec3 { return v * t; }
 
 namespace std {
-inline constexpr double pow(const vec3 &v, double p) { return ::std::pow(::std::sqrt(v.dot(v)), p); };
-inline constexpr double sqrt(const vec3 &v) { return ::std::pow(v, 0.5); };
+[[nodiscard]] inline constexpr auto pow(const vec3 &v, double p) -> double {
+    return ::std::pow(::std::sqrt(v.dot(v)), p);
+};
+[[nodiscard]] inline constexpr auto sqrt(const vec3 &v) -> double { return ::std::pow(v, 0.5); };
 } // namespace std
+
+[[nodiscard]] inline auto lerp(const vec3 &start, const vec3 &end, double t) -> vec3 {
+    return (1.0 - t) * start + t * end;
+}
 
 using point = vec3;
 using color = vec3;

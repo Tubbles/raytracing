@@ -1,7 +1,5 @@
 #pragma once
 
-#include "vec3.hpp"
+#define ARR_LEN(arr) (sizeof(arr) / sizeof((arr)[0]))
 
-double lerp(double start, double end, double t) { return (1.0 - t) * start + t * end; }
-
-vec3 lerp(vec3 start, vec3 end, double t) { return (1.0 - t) * start + t * end; }
+[[nodiscard]] inline auto lerp(double start, double end, double t) -> double { return (1.0 - t) * start + t * end; }

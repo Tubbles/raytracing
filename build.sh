@@ -2,23 +2,64 @@
 
 set -euo pipefail
 
-# dirs
 my_dir="$(dirname "$(realpath "$0")")"
+
+args=("$@")
+cmake_args=()
+ninja_args=()
+
+# Parse args
+if [[ " ${args[*]} " =~ " help " ]]; then
+    echo "Usage: $0 [options..], where [options..] can be zero or more of:
+        help
+        verbose
+        clean - Clean the output directory before building
+        release - Build for release mode
+        dirty - Do not generate warnings and errors
+        tidy - Do not build, instead run clang-tidy checks (takes some time)
+        run - Run the program after build"
+    exit
+fi
+
+if [[ " ${args[*]} " =~ " verbose " ]]; then
+    ninja_args+=("-v")
+fi
+
+config="Debug"
+if [[ " ${args[*]} " =~ " release " ]]; then
+    config="Release"
+fi
+
 out_dir="${my_dir}/out"
-src_dir="${my_dir}/src"
+configured_out_dir="${out_dir}/${config}"
 
-# files
-binary="${out_dir}/raytrace"
-sources="${src_dir}/"*.cpp
+target="all"
+if [[ " ${args[*]} " =~ " dirty " ]]; then
+    cmake_args+=("-DDIRTY=1")
+    target="raytrace"
+elif [[ " ${args[*]} " =~ " tidy " ]]; then
+    target="clang-tidy"
+fi
 
-# libs
-libs=(
-    "-lfmt"
-)
+# Clean
+if [[ " ${args[*]} " =~ " clean " ]]; then
+    rm -fr "${out_dir}"
+fi
 
+# Generate
 mkdir -p "${out_dir}"
-cd "${out_dir}"
+# Word splitting intended
+# shellcheck disable=2068
+CC="$(command -v clang)" CXX="$(command -v clang++)" cmake -S "${my_dir}" -B "${out_dir}" -G "Ninja Multi-Config" ${cmake_args[@]}
 
-set -x
+# Build
+# Word splitting intended
+# shellcheck disable=2068
+cmake --build "${out_dir}" --config "${config}" --target "${target}" -- ${ninja_args[@]}
 
-g++ --std=c++23 -g -o "${binary}" ${libs[@]} ${sources}
+# Run
+if [[ " ${args[*]} " =~ " run " ]]; then
+    image="${configured_out_dir}/image.ppm"
+    "${configured_out_dir}/raytrace" >"${image}"
+    viewnior "${image}"
+fi

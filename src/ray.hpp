@@ -11,6 +11,6 @@ struct ray_t {
 
     [[nodiscard]] auto project(double t) const -> point_t { return origin + t * direction; }
 
-    point_t origin;
-    vec3_t direction;
+    point_t origin = {};
+    vec3_t direction = {};
 };

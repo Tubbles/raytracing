@@ -1,28 +1,17 @@
 #include "camera.hpp"
 #include "hittable.hpp"
+#include "random.hpp"
 #include "ray.hpp"
 #include "sphere.hpp"
 #include "util.hpp"
 #include "vec3.hpp"
+#include "world.hpp"
 #include <fmt/format.h>
 #include <vector>
 
-static auto ray_color(const ray_t &ray, const std::vector<std::shared_ptr<hittable_i>> &world) -> color_t {
+static auto ray_color(const ray_t &ray, const world_t &world) -> color_t {
     // See if we hit any objects first
-    hit_record_t rec;
-    hit_record_t temp_rec;
-    bool hit_anything = false;
-    auto closest_so_far = std::numeric_limits<double>::infinity();
-
-    for (const auto &object : world) {
-        if (temp_rec = object->hit(ray, 0, closest_so_far); temp_rec) {
-            hit_anything = true;
-            closest_so_far = temp_rec.t;
-            rec = temp_rec;
-        }
-    }
-
-    if (hit_anything) {
+    if (hit_record_t rec = world.hit(ray); rec) {
         return 0.5 * (rec.normal + color_t::from(1, 1, 1));
     }
 
@@ -36,13 +25,14 @@ auto main(int argc, char *argv[]) -> int {
     const std::vector<std::string> args(argv + 1, argv + argc); // cppcheck-suppress unreadVariable
 
     // Image
-    const int samples_per_pixel = 30;
+    const bool use_anti_alias = true;
+    const int samples_per_pixel = 100;
 
     // World
-    std::vector<std::shared_ptr<hittable_i>> world;
-    world.push_back(std::make_shared<sphere_t>(point_t::from(0, 0, -1), 0.5));
-    world.push_back(std::make_shared<sphere_t>(point_t::from(-0.1, 0.1, -0.6), 0.2));
-    world.push_back(std::make_shared<sphere_t>(point_t::from(0, -100.5, -1), 100));
+    world_t world;
+    world.add(std::make_shared<sphere_t>(point_t::from(0, 0, -1), 0.5));
+    world.add(std::make_shared<sphere_t>(point_t::from(-0.1, 0.1, -0.6), 0.2));
+    world.add(std::make_shared<sphere_t>(point_t::from(0, -100.5, -1), 100));
 
     // Camera
     camera_t camera;
@@ -54,15 +44,24 @@ auto main(int argc, char *argv[]) -> int {
 
     for (int j = camera.image_height - 1; j >= 0; --j) {
         for (int i = 0; i < camera.image_width; ++i) {
-            color_t pixel = color_t::from(0, 0, 0);
-            for (int s = 0; s < samples_per_pixel; ++s) {
-                auto u = (i + random_double()) / (camera.image_width - 1);
-                auto v = (j + random_double()) / (camera.image_height - 1);
-                ray_t ray = camera.get_ray(u, v);
-                pixel += ray_color(ray, world);
+            color_t pixel{};
+
+            if (use_anti_alias) {
+                for (int s = 0; s < samples_per_pixel; ++s) {
+                    auto u = (i + random_double()) / (camera.image_width - 1);
+                    auto v = (j + random_double()) / (camera.image_height - 1);
+                    const ray_t ray = camera.get_ray(u, v);
+                    pixel += ray_color(ray, world);
+                }
+                pixel *= 1.0 / static_cast<double>(samples_per_pixel);
+            } else {
+                auto u = static_cast<double>(i) / (camera.image_width - 1);
+                auto v = static_cast<double>(j) / (camera.image_height - 1);
+                const ray_t ray = camera.get_ray(u, v);
+                pixel = ray_color(ray, world);
             }
 
-            fmt::print("{}\n", pixel.ppm_string(1.0 / static_cast<double>(samples_per_pixel)));
+            fmt::print("{}\n", pixel.ppm_string());
         }
     }
 }

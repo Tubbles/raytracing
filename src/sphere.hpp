@@ -9,7 +9,7 @@ struct sphere_t : public hittable_i {
 
     [[nodiscard]] auto hit(const ray_t &r, double t_min, double t_max) const -> hit_record_t override;
 
-    point_t center;
+    point_t center = {};
     double radius = 0.0;
 };
 

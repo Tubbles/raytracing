@@ -7,7 +7,7 @@
 
 struct vec3_t {
     union {
-        double e[3]; // Array used for unionizing, NOLINT (modernize-avoid-c-arrays)
+        double e[3] = {0.0, 0.0, 0.0};
         struct {
             double x;
             double y;
@@ -20,7 +20,6 @@ struct vec3_t {
         };
     };
 
-    constexpr vec3_t() : e{0.0, 0.0, 0.0} {} // All union members init'ed, NOLINT(hicpp-member-init)
     constexpr static auto from(double e0, double e1, double e2) -> vec3_t {
         vec3_t out;
         out.e[0] = e0;
@@ -100,13 +99,13 @@ struct vec3_t {
 
     [[nodiscard]] auto to_string() const -> std::string { return std::string{*this}; }
 
-    [[nodiscard]] auto ppm_string(double scale = 1.0) const -> std::string {
+    [[nodiscard]] auto ppm_string() const -> std::string {
         // clang-format off
         return fmt::format(
             "{} {} {}",
-            static_cast<uint8_t>(256 * clamp(0.0, this->r * scale, 0.999)),
-            static_cast<uint8_t>(256 * clamp(0.0, this->g * scale, 0.999)),
-            static_cast<uint8_t>(256 * clamp(0.0, this->b * scale, 0.999))
+            static_cast<uint8_t>(256 * clamp(0.0, this->r, 0.999)),
+            static_cast<uint8_t>(256 * clamp(0.0, this->g, 0.999)),
+            static_cast<uint8_t>(256 * clamp(0.0, this->b, 0.999))
         );
         // clang-format on
     }

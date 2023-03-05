@@ -1,12 +1,13 @@
 #pragma once
 
+#include "interface.hpp"
 #include "ray.hpp"
 #include "util.hpp"
 #include "vec3.hpp"
 
 struct hit_record_t {
-    point_t point;
-    vec3_t normal;
+    point_t point = {};
+    vec3_t normal = {};
     double t = 0.0;
     bool has_hit = false;
     bool front_face = false;
